@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        
+
         <title>{{title}}</title>
             <link href='https://fonts.googleapis.com/css?family=Oswald' rel='stylesheet'>
             <link href='https://fonts.googleapis.com/css?family=Cardo' rel='stylesheet'>
@@ -12,25 +12,27 @@
         <div id="Topheader">
             <h1 style="color:rgb(79, 94, 168)"> {{title}}</a>
             </h1>
+            <br>
+            <p>ISBN: {{ISBN}}</p>
             <hr />
         </div>
-        
-    
+
+
         <div class="container_about">
 
-            <div class="main_body">  
+            <div class="main_body">
             </div>
 
             <div class="row">
                 <div class="col-lg-3 col-sm-6 Background: red">
-            
+
                     <p class="aboutme">
                         Written by
                         <br>
                         <br>
                         {{author}}
                     </p>
-                
+
                 </div>
                 <div class="col-lg-3 col-sm-6">
                     <p class="aboutme">
@@ -42,18 +44,30 @@
                 </div>
                 <div class="col-lg-3 col-sm-6">
                     <p class="aboutme">
-                        Rating:
+                        Reviews:
                         <br>
                         <br>
-                        none
-                        
+                        {% for content in content %}
+                            <p> {{content [0]}} :  {{content [1]}}</p>
+                        {% endfor %}
+
+                        <form action="" method="get" class="form-1">
+                            <div class="form-example">
+                              <label for="input">Enter your review: </label>
+                              <input type="text" name="review" id="review_Id" style="width:100%" required>
+                            </div>
+
+                            <div class="form-1">
+                              <input type="submit" value="Submit!">
+                            </div>
+                          </form>
+
                     </p>
                 </div>
             </div>
 
-            
+
         </div>
     </body>
     </div>
 </html>
-

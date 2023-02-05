@@ -1,3 +1,4 @@
+
 import os
 
 from flask import Flask, session, render_template, request
@@ -64,14 +65,31 @@ def search():
         author = request.form.get("author")
         if not title and not isbn and not author:
             return render_template("error.html",message = "Please fill at least one filed.")
-        books = db.execute(text("SELECT * from books where author like :author or isbn like :isbn or title like :title;"), {"author": '%' + author + '%',"isbn": '%' + isbn + '%',"title": '%' + title + '%'}).fetchall()
+        elif not title:
+            if not isbn:
+                books = db.execute(text("SELECT * from books where author like :author"), {"author": '%' + author + '%'}).fetchall()
+            elif not author:
+                books = db.execute(text("SELECT * from books where isbn like :isbn"), {"isbn": '%' + isbn + '%'}).fetchall()
+            else:
+                books = db.execute(text("SELECT * from books where isbn like :isbn and author like :author"), {"isbn": '%' + isbn + '%',"author": '%' + author + '%'}).fetchall()
+        else:
+            if not isbn:
+                books = db.execute(text("SELECT * from books where title like :title and author like :author"), {"title": '%' + title + '%',"author": '%' + author + '%'}).fetchall()
+            elif not author:
+                books = db.execute(text("SELECT * from books where isbn like :isbn and title like :title"), {"isbn": '%' + isbn + '%',"title": '%' + title + '%'}).fetchall()
+            else:
+                books = db.execute(text("SELECT * from books where title like :title"), {"title": '%' + title + '%'}).fetchall()
+
+
+
         db.commit()
         success = 1
         return render_template("search.html", success = success, books=books)
     return render_template("search.html",success = success)
+
 @app.route("/<string:isbn>")#,methods=["GET","POST"]
 #@app.route("/")
-def book(isbn):
+def book(isbn,methods=["POST","GET"]):
     values={'isbn': isbn}
     msg=text('SELECT title, author, year FROM books WHERE isbn= :isbn')
     ans=db.execute(msg,values)
@@ -79,4 +97,11 @@ def book(isbn):
     title = results[0]
     author = results[1]
     year = results[2]
-    return render_template("book.html", title=title,author=author,year=year)
+
+    #Below are to find the review content
+    review_ex=text('SELECT u.username,r.content FROM reviews AS r LEFT JOIN users as u ON u.userid=r.user_id WHERE r.book_id= :isbn')
+    ans2=db.execute(review_ex,values).fetchall()
+    db.commit()
+    #content="\n ".join(": ".join(str(x) for x in row) for row in ans2)
+
+    return render_template("book.html", title=title,author=author,year=year,content=ans2, ISBN=isbn)
