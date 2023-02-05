@@ -64,7 +64,7 @@ def search():
         author = request.form.get("author")
         if not title and not isbn and not author:
             return render_template("error.html",message = "Please fill at least one filed.")
-        books = db.execute(text("SELECT * from books where isbn = :isbn or title = :title or author = :author"), {"isbn": isbn, "title": title, "author": author}).fetchall()
+        books = db.execute(text("SELECT * from books where author like :author or isbn like :isbn or title like :title;"), {"author": '%' + author + '%',"isbn": '%' + isbn + '%',"title": '%' + title + '%'}).fetchall()
         db.commit()
         success = 1
         return render_template("search.html", success = success, books=books)
