@@ -1,10 +1,14 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>MZlibrary</title>
-    </head>
-    <body>
-        <h1> READ and REVIEW </h1>
-        <a href="{{url_for('register')}}">Register</a>
-    </body>
-</html>
+{% extends "layout.html" %}
+
+{% block title %}
+    MZlibrary
+{% endblock %}
+
+{% block body%}
+    <h1> Welcome to MZlibrary </h1>
+    <div class ="form-group">
+        <a href="{{url_for('login')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Login</a>
+        <a href="{{url_for('register')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Register</a>
+    </div>
+{% endblock %}

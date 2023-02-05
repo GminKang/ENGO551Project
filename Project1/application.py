@@ -1,9 +1,11 @@
 import os
 
-from flask import Flask, session, render_template
+from flask import Flask, session, render_template, request
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.sql import text
+
 
 app = Flask(__name__)
 # Check for environment variable
@@ -23,53 +25,58 @@ db = scoped_session(sessionmaker(bind=engine))
 
 @app.route("/")
 def index():
+
     return render_template("index.html")
 
-@app.route('/login', methods =['GET', 'POST'])
+@app.route("/login", methods=["POST","GET"])
 def login():
-    msg = ''
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-        username = request.form['username']
-        password = request.form['password']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE username = % s AND password = % s', (username, password, ))
-        account = cursor.fetchone()
-        if account:
-            session['loggedin'] = True
-            session['id'] = account['id']
-            session['username'] = account['username']
-            msg = 'Logged in successfully !'
-            return render_template('index.html', msg = msg)
-        else:
-            msg = 'Incorrect username / password !'
-    return render_template('login.html', msg = msg)
+    success  = 0
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if not username or not password:
+            return render_template("error.html",message = "Please fill out the form.")
+        users = db.execute(text("SELECT * from users where username= :username"), {"username": username}).fetchall()
+        db.commit()
+        success = 1
+        return render_template("login.html",success = success, users = users)
+    return render_template("login.html",success = success)
 
-@app.route('/logout')
-def logout():
-    session.pop('loggedin', None)
-    session.pop('id', None)
-    session.pop('username', None)
-    return redirect(url_for('login'))
-
-@app.route('/register', methods =['GET', 'POST'])
+@app.route("/register",methods=["GET","POST"])
 def register():
-    msg = ''
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
-        username = request.form['username']
-        password = request.form['password']
-        cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE username = % s', (username, ))
-        account = cursor.fetchone()
-        if account:
-            msg = 'Account already exists !'
-        elif not re.match(r'[A-Za-z0-9]+', username):
-            msg = 'Username must contain only characters and numbers !'
-        elif not username or not password:
-            msg = 'Please fill out the form !'
-        else:
-            cursor.execute('INSERT INTO accounts VALUES (NULL, % s, % s)', (username, password))
-            mysql.connection.commit()
-            msg = 'You have successfully registered !'
-    elif request.method == 'POST':
-        msg = 'Please fill out the form !'
-    return render_template('register.html', msg = msg)
+    success  = 0
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if not username or not password:
+            return render_template("error.html",message = "Please fill out the form.")
+        db.execute(text("INSERT INTO users (username, password) VALUES (:username, :password)"), {"username": username, "password": password})
+        db.commit()
+        success  = 1
+    return render_template("register.html",success = success)
+
+@app.route("/search",methods=["POST","GET"])
+def search():
+    success  = 0
+    if request.method == "POST":
+        title = request.form.get("title")
+        isbn = request.form.get("isbn")
+        author = request.form.get("author")
+        if not title and not isbn and not author:
+            return render_template("error.html",message = "Please fill at least one filed.")
+        books = db.execute(text("SELECT * from books where isbn = :isbn or title = :title or author = :author"), {"isbn": isbn, "title": title, "author": author}).fetchall()
+        db.commit()
+        success = 1
+        return render_template("search.html", success = success, books=books)
+    return render_template("search.html",success = success)
+@app.route("/<string:isbn>")#,methods=["GET","POST"]
+#@app.route("/")
+def book(isbn):
+    values={'isbn': isbn}
+    msg=text('SELECT title, author, year FROM books WHERE isbn= :isbn')
+    ans=db.execute(msg,values)
+    results= ans.first()
+    title = results[0]
+    author = results[1]
+    year = results[2]
+    return render_template("book.html", title=title,author=author,year=year)

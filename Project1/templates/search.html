@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+{% extends "layout.html" %}
+
+{% block title %}
+    MZlibrary
+{% endblock %}
+
+{% block body%}
+    <h1> Welcome to MZlibrary </h1>
+        {% if success %}
+            <h2>Search results</h2>
+
+            {% if not books %}
+                <h3> No results </h3>
+            {% endif %}
+
+            {% for book in books %}
+                <li>
+                    <a href="{{url_for('book', isbn = book.isbn)}}">{{book.title}}</a>
+
+                </li>
+
+            {% endfor %}
+            <div class ="form-group">
+                <a href="{{url_for('login')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Log out</a>
+            </div>
+        {% else %}
+            <div class ="form-group">
+                <form action ="{{ url_for('search')}}" method="post">
+
+                  <input type="text" class = "form-control" name="title" placeholder ="Type title">
+                  <input type="text" class = "form-control" name="isbn" placeholder ="Type ISBN">
+                  <input type="text" class = "form-control" name="author" placeholder ="Type author">
+                  <div class ="form-group">
+                      <button class = "btn btn-primary"> Search</button>
+                  </div>
+                </form>
+
+            </div>
+            <div class ="form-group">
+                <a href="{{url_for('login')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Log out</a>
+            </div>
+        {% endif %}
+{% endblock %}
