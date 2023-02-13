@@ -1,11 +1,13 @@
 
 import os
 
+
 from flask import Flask, session, render_template, request
 from flask_session import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.sql import text
+import requests
 
 
 app = Flask(__name__)
@@ -24,7 +26,7 @@ engine = create_engine(os.getenv("DATABASE_URL"))
 db = scoped_session(sessionmaker(bind=engine))
 
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def index():
 
     return render_template("index.html")
@@ -35,6 +37,7 @@ def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
+        session['username'] = username
         if not username or not password:
             return render_template("error.html",message = "Please fill out the form.")
         users = db.execute(text("SELECT * from users where username= :username"), {"username": username}).fetchall()
@@ -87,21 +90,53 @@ def search():
         return render_template("search.html", success = success, books=books)
     return render_template("search.html",success = success)
 
-@app.route("/<string:isbn>")#,methods=["GET","POST"]
+@app.route("/<string:isbn>", methods=['GET', 'POST'])#,methods=["GET","POST"]
 #@app.route("/")
-def book(isbn,methods=["POST","GET"]):
+def book(isbn):
     values={'isbn': isbn}
     msg=text('SELECT title, author, year FROM books WHERE isbn= :isbn')
     ans=db.execute(msg,values)
     results= ans.first()
-    title = results[0]
-    author = results[1]
-    year = results[2]
-
+    #title = results[0]
+    #author = results[1]
+    #year = results[2]
     #Below are to find the review content
-    review_ex=text('SELECT u.username,r.content FROM reviews AS r LEFT JOIN users as u ON u.userid=r.user_id WHERE r.book_id= :isbn')
+    review_ex=text('SELECT u.username,r.content,r.ratings FROM reviews AS r LEFT JOIN users as u ON u.userid=r.user_id WHERE r.book_id= :isbn')
     ans2=db.execute(review_ex,values).fetchall()
     db.commit()
-    #content="\n ".join(": ".join(str(x) for x in row) for row in ans2)
 
-    return render_template("book.html", title=title,author=author,year=year,content=ans2, ISBN=isbn)
+
+
+
+    #content="\n ".join(": ".join(str(x) for x in row) for row in ans2)
+    try:
+        str1="".join(["isbn:", isbn])
+        res = requests.get("https://www.googleapis.com/books/v1/volumes", params={"q": str1})
+        title=res.json()["items"][0]["volumeInfo"]["title"]
+        author=res.json()["items"][0]["volumeInfo"]["authors"]
+        year=res.json()["items"][0]["volumeInfo"]["publishedDate"]
+
+        rating=res.json()["items"][0]["volumeInfo"]["averageRating"]
+        count=res.json()["items"][0]["volumeInfo"]["ratingsCount"]
+        ISBN13=res.json()["items"][0]["volumeInfo"]["industryIdentifiers"][0]["identifier"]
+
+        rating_u=0
+        if res.status_code != 200:
+            raise Exception ("ERROR: API reqst unsuccessful")
+
+
+        if request.method=='POST':
+
+            review = request.form.get("review")
+            rat=request.form.get("rating_u")
+            t_values={'username': session['username']}
+            t_msg=text('SELECT userid FROM users WHERE username= :username')
+            t_uid=db.execute(t_msg,t_values).fetchall()[0][0]
+            db.execute(text("INSERT INTO reviews VALUES (:userid, :book, :content, :ratings)"), {"userid": t_uid, "book": isbn, "content": review, "ratings": rat})
+            db.commit()
+            success  = 1
+            rating_u=rat
+    except KeyError:
+        return render_template("error.html",message = "404 not found")
+
+    return render_template("book.html", title=title,author=author,year=year,content=ans2, ISBN=isbn, ISBN13=ISBN13,rating=rating,count=count,rating_u=rating_u)

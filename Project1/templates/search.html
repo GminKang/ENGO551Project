@@ -22,6 +22,9 @@
 
             {% endfor %}
             <div class ="form-group">
+                <a href="{{url_for('search')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Back to Search</a>
+            </div>
+            <div class ="form-group">
                 <a href="{{url_for('login')}}" class="btn btn-primary btn-lg active" role="button" aria-pressed="true">Log out</a>
             </div>
         {% else %}

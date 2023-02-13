@@ -14,6 +14,7 @@
             </h1>
             <br>
             <p>ISBN: {{ISBN}}</p>
+            <p>ISBN13: {{ISBN13}}</p>
             <hr />
         </div>
 
@@ -40,25 +41,34 @@
                         <br>
                         <br>
                         {{year}}
+
                     </p>
                 </div>
                 <div class="col-lg-3 col-sm-6">
                     <p class="aboutme">
+                        <p>Rating:  {{rating}}/5</p>
+                        <p>Rating Count: {{count}}</p>
                         Reviews:
                         <br>
                         <br>
                         {% for content in content %}
-                            <p> {{content [0]}} :  {{content [1]}}</p>
+                            <p> {{content [0]}} :  {{content [1]}}<br>
+                                Given Rating: {{content [2]}}
+                            </p>
                         {% endfor %}
 
-                        <form action="" method="get" class="form-1">
+                        <form method="post" >
                             <div class="form-example">
                               <label for="input">Enter your review: </label>
                               <input type="text" name="review" id="review_Id" style="width:100%" required>
-                            </div>
 
+                            </div>
+                            <div class="form-example">
+                            <label for="input">Rating you give : </label>
+                            <input type="text" name="rating_u" id="rating_u" style="width:100%" required>
+                            </div>
                             <div class="form-1">
-                              <input type="submit" value="Submit!">
+                                <button class = "btn btn-primary"> submit</button>
                             </div>
                           </form>
 
